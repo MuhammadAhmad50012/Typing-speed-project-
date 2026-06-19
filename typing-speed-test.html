@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TypeBench — Formal Typing Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:   #0d0d0d;
+      --black2:  #161616;
+      --black3:  #1f1f1f;
+      --border:  #2c2c2c;
+      --muted:   #4a4a4a;
+      --dim:     #6b6b6b;
+      --text:    #e8e0cc;
+      --yellow:  #f5c518;
+      --yellow2: #ffd84d;
+      --yellow3: #fff3b0;
+      --correct: #a3c98a;
+      --wrong:   #e06c6c;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--black);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--black2);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      background: var(--yellow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-mark svg { width: 14px; height: 14px; }
+
+    .brand-name {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+
+    .brand-name span { color: var(--yellow); }
+
+    .topbar-right {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Main layout ── */
+    main {
+      width: 100%;
+      max-width: 760px;
+      padding: 3rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* ── Section label ── */
+    .sec-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sec-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Stats strip ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--border);
+      background: var(--black2);
+    }
+
+    .stat-cell {
+      padding: 1.1rem 1.25rem;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+
+    .stat-cell:last-child { border-right: none; }
+
+    .stat-cell::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--yellow);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .stat-cell.active::before { opacity: 1; }
+
+    .stat-val {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 2rem;
+      font-weight: 500;
+      color: var(--yellow);
+      line-height: 1;
+    }
+
+    .stat-val.urgent { color: var(--wrong); }
+
+    .stat-val.pulse {
+      animation: statpulse 0.25s ease;
+    }
+
+    @keyframes statpulse {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .stat-lbl {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--dim);
+      margin-top: 5px;
+    }
+
+    /* ── Controls row ── */
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .diff-group {
+      display: flex;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .diff-btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 18px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--black2);
+      color: var(--dim);
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .diff-btn:last-child { border-right: none; }
+    .diff-btn:hover      { background: var(--black3); color: var(--text); }
+
+    .diff-btn.active {
+      background: var(--yellow);
+      color: var(--black);
+      font-weight: 500;
+    }
+
+    .action-btns { display: flex; gap: 8px; }
+
+    .btn-ghost {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 7px 16px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.12s, color 0.12s;
+    }
+
+    .btn-ghost:hover { border-color: var(--yellow); color: var(--yellow); }
+
+    /* ── Typing area ── */
+    .typing-zone {
+      border: 1px solid var(--border);
+      background: var(--black2);
+      padding: 2rem;
+      position: relative;
+      cursor: text;
+      min-height: 150px;
+    }
+
+    /* Yellow corner accent — the signature element */
+    .typing-zone::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 32px; height: 3px;
+      background: var(--yellow);
+    }
+
+    .typing-zone.idle::after {
+      content: 'Click here or start typing';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(13,13,13,0.72);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      color: var(--dim);
+      pointer-events: none;
+    }
+
+    #display {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+      line-height: 2;
+      color: var(--muted);
+      word-break: break-word;
+      user-select: none;
+    }
+
+    #display .ch           { color: var(--muted); transition: color 0.04s; }
+    #display .ch.correct   { color: var(--correct); }
+    #display .ch.wrong     { color: var(--wrong); background: rgba(224,108,108,0.1); }
+    #display .ch.cursor    {
+      border-left: 2px solid var(--yellow);
+      margin-left: -2px;
+      animation: cur 0.85s step-start infinite;
+    }
+
+    @keyframes cur {
+      0%,100% { border-color: var(--yellow); }
+      50%      { border-color: transparent; }
+    }
+
+    #hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px; height: 1px;
+    }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      height: 2px;
+      background: var(--border);
+      position: relative;
+    }
+
+    .progress-fill {
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%;
+      background: var(--yellow);
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    /* ── Passage info strip ── */
+    .passage-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .passage-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag-dot {
+      width: 6px; height: 6px;
+      background: var(--yellow);
+    }
+
+    /* ── Results overlay ── */
+    #results {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    #results.show { display: flex; }
+
+    .res-panel {
+      background: var(--black2);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--yellow);
+      width: 90%;
+      max-width: 480px;
+      padding: 2.5rem;
+    }
+
+    .res-eyebrow {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 1.25rem;
+    }
+
+    .res-wpm-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 0.25rem;
+    }
+
+    .res-wpm {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 5.5rem;
+      font-weight: 500;
+      color: var(--yellow);
+      line-height: 1;
+    }
+
+    .res-wpm-unit {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 16px;
+      color: var(--dim);
+    }
+
+    .res-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    .res-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    .res-cell {
+      padding: 1rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .res-cell:last-child { border-right: none; }
+
+    .res-cell .v {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .res-cell .v.g { color: var(--correct); }
+    .res-cell .v.r { color: var(--wrong); }
+
+    .res-cell .l {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dim);
+      margin-top: 4px;
+    }
+
+    .res-msg {
+      font-size: 13px;
+      color: var(--dim);
+      line-height: 1.65;
+      margin-bottom: 1.75rem;
+      border-left: 2px solid var(--yellow);
+      padding-left: 12px;
+    }
+
+    .res-btns { display: flex; gap: 10px; }
+
+    .btn-primary {
+      flex: 1;
+      padding: 0.85rem;
+      background: var(--yellow);
+      color: var(--black);
+      border: none;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .btn-primary:hover { background: var(--yellow2); }
+
+    .btn-secondary {
+      padding: 0.85rem 1.25rem;
+      background: transparent;
+      color: var(--dim);
+      border: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+    }
+
+    .btn-secondary:hover { border-color: var(--yellow); color: var(--yellow); }
+
+    /* ── Footer hint ── */
+    .hint {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-align: center;
+    }
+
+    .hint kbd {
+      background: var(--black3);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      font-family: inherit;
+      font-size: 10px;
+    }
+
+    @media (max-width: 520px) {
+      .stats-strip { grid-template-columns: repeat(2, 1fr); }
+      .stat-cell:nth-child(2) { border-right: none; }
+      .stat-cell:nth-child(3) { border-top: 1px solid var(--border); }
+      .stat-cell:nth-child(4) { border-top: 1px solid var(--border); }
+      .res-wpm { font-size: 4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="1" y="3" width="12" height="1.5" fill="#0d0d0d"/>
+        <rect x="1" y="6.25" width="9" height="1.5" fill="#0d0d0d"/>
+        <rect x="1" y="9.5" width="10.5" height="1.5" fill="#0d0d0d"/>
+      </svg>
+    </div>
+    <span class="brand-name">Type<span>Bench</span></span>
+  </div>
+  <span class="topbar-right">Typing Speed Test</span>
+</div>
+
+<main>
+
+  <!-- Stats -->
+  <div>
+    <p class="sec-label">Live stats</p>
+    <div class="stats-strip" style="margin-top:0.75rem">
+      <div class="stat-cell active">
+        <div class="stat-val" id="stat-time">60</div>
+        <div class="stat-lbl">Seconds left</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="stat-wpm">0</div>
+        <div class="stat-lbl">WPM</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="stat-acc">100</div>
+        <div class="stat-lbl">Accuracy %</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val" id="stat-err">0</div>
+        <div class="stat-lbl">Errors</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-row">
+    <div class="diff-group">
+      <button class="diff-btn active" data-level="easy">Easy</button>
+      <button class="diff-btn" data-level="medium">Medium</button>
+      <button class="diff-btn" data-level="hard">Hard</button>
+    </div>
+    <div class="action-btns">
+      <button class="btn-ghost" id="restart-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="square" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        New test
+      </button>
+    </div>
+  </div>
+
+  <!-- Passage info -->
+  <div class="passage-info">
+    <div class="passage-tag">
+      <div class="tag-dot"></div>
+      <span id="passage-label">General knowledge</span>
+    </div>
+    <span>60 seconds</span>
+  </div>
+
+  <!-- Typing zone -->
+  <div class="typing-zone idle" id="typing-zone">
+    <div id="display"></div>
+    <input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here"/>
+  </div>
+
+  <p class="hint">Press <kbd>Tab</kbd> to restart anytime</p>
+
+</main>
+
+<!-- Results panel -->
+<div id="results" role="dialog" aria-modal="true" aria-label="Test results">
+  <div class="res-panel">
+    <div class="res-eyebrow">Test complete</div>
+    <div class="res-wpm-row">
+      <div class="res-wpm" id="res-wpm">0</div>
+      <div class="res-wpm-unit">wpm</div>
+    </div>
+    <div class="res-divider"></div>
+    <div class="res-grid">
+      <div class="res-cell">
+        <div class="v g" id="res-acc">0%</div>
+        <div class="l">Accuracy</div>
+      </div>
+      <div class="res-cell">
+        <div class="v r" id="res-err">0</div>
+        <div class="l">Errors</div>
+      </div>
+      <div class="res-cell">
+        <div class="v" id="res-chars">0</div>
+        <div class="l">Chars</div>
+      </div>
+    </div>
+    <p class="res-msg" id="res-msg"></p>
+    <div class="res-btns">
+      <button class="btn-secondary" onclick="goChangeLevel()">Change level</button>
+      <button class="btn-primary" id="res-again">Try again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ═══════════════════════════════════════════
+  // PASSAGE BANK  — real-language sentences
+  // Organised by difficulty (word length + complexity)
+  // ═══════════════════════════════════════════
+  const passages = {
+
+    easy: [
+      "The sun rose slowly over the hills and painted the sky in shades of orange and pink. Birds began to sing as the morning light spread across the quiet valley. A gentle wind moved through the tall grass near the river. It was the kind of morning that made everything feel possible and new.",
+
+      "Learning to cook is one of the best skills a person can develop. You do not need expensive tools or a large kitchen to make good food. Start with simple recipes and focus on getting the basics right. Over time you will build confidence and enjoy the process of making meals from scratch.",
+
+      "Reading books every day is one of the habits that many successful people share in common. Even thirty minutes before bed can make a real difference to how much you learn over a year. Choose books that challenge your thinking and introduce you to ideas you would not find anywhere else.",
+
+      "A good night of sleep is just as important as eating well and staying active. When you sleep your brain processes the events of the day and stores useful information in your memory. Most adults need between seven and nine hours each night to function at their best the next morning.",
+
+      "Cities around the world are working to become greener and more sustainable. Trees are being planted along busy streets, and rooftops are being converted into gardens. Public transport networks are being expanded so that fewer people need to drive. These small changes add up and help reduce the impact on our environment."
+    ],
+
+    medium: [
+      "The global economy is shaped by millions of individual decisions made every single day by consumers, businesses, and governments alike. When people feel confident about their financial future, they spend more freely, which drives production and creates employment. Conversely, uncertainty tends to make people cautious, which slows economic activity across entire sectors.",
+
+      "Artificial intelligence is no longer a concept confined to science fiction novels and research laboratories. It is already embedded in the tools we use every day, from the search engines that retrieve information to the recommendation systems that suggest what to watch next. Understanding how these systems work is becoming an essential literacy for everyone.",
+
+      "Effective communication is not simply about choosing the right words. It requires the ability to listen carefully, read the mood of the room, and adapt your message to your audience. Many misunderstandings in both personal and professional settings arise not from what is said, but from how it is delivered and received.",
+
+      "Climate change is one of the defining challenges of the twenty first century, demanding coordinated action across national borders and political divides. The scientific consensus is clear that human activity has warmed the planet, and that the consequences will intensify without meaningful reductions in greenhouse gas emissions over the coming decades.",
+
+      "Entrepreneurship involves more than having a good idea. It demands the discipline to execute consistently, the resilience to recover from setbacks, and the judgment to know when to pivot versus when to persist. Many ventures that appear successful overnight were built over years of quiet iteration and incremental improvement in the background."
+    ],
+
+    hard: [
+      "Neuroscientists have long debated the degree to which human consciousness is a product of deterministic neurological processes or whether it retains some element of genuine agency that cannot be fully reduced to electrochemical signals. The implications of this question extend far beyond academic philosophy, touching on the foundations of ethics, law, and what it means to hold individuals accountable for their actions.",
+
+      "The proliferation of disinformation across digital platforms presents a fundamental challenge to democratic governance because it exploits the same cognitive shortcuts and tribal loyalties that once helped communities cohere. Algorithmic amplification rewards content that provokes outrage over content that informs, creating an asymmetry where false narratives spread faster and farther than corrections ever manage to follow.",
+
+      "Quantum computing leverages the principles of superposition and entanglement to perform calculations that would require classical computers an astronomically impractical length of time to complete. While practical quantum advantage remains constrained to specific problem domains, the implications for cryptography, materials science, and pharmaceutical research are sufficiently significant to warrant substantial investment from governments and private institutions worldwide.",
+
+      "The tension between individual privacy and collective security has become one of the most consequential policy debates of the digital era. Surveillance technologies that allow governments to monitor communications at scale can undoubtedly disrupt criminal networks and prevent attacks, but they simultaneously create infrastructure that is susceptible to abuse if institutional safeguards erode or change hands through democratic transitions.",
+
+      "Urbanisation is reshaping the social fabric of societies at a pace that infrastructure investment and governance frameworks are struggling to match. As megacities absorb populations from rural regions, they concentrate economic opportunity while simultaneously amplifying inequality, straining housing markets, and placing extraordinary pressure on sanitation, transportation, and public health systems that were designed for a fraction of their current load."
+    ]
+  };
+
+  // ═══════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════
+  const DURATION   = 60;
+  let level        = 'easy';
+  let chars        = [];       // array of characters in current passage
+  let typed        = [];       // null | 'correct' | 'wrong' per char
+  let charIndex    = 0;
+  let errorCount   = 0;
+  let totalPressed = 0;
+  let timeLeft     = DURATION;
+  let timerID      = null;
+  let started      = false;
+  let finished     = false;
+
+  // ═══════════════════════════════════════════
+  // ELEMENTS
+  // ═══════════════════════════════════════════
+  const displayEl   = document.getElementById('display');
+  const inputEl     = document.getElementById('hidden-input');
+  const zoneEl      = document.getElementById('typing-zone');
+  const fillEl      = document.getElementById('progress-fill');
+  const resultsEl   = document.getElementById('results');
+  const passLbl     = document.getElementById('passage-label');
+
+  const LABELS = { easy: 'General knowledge', medium: 'Current affairs', hard: 'Academic writing' };
+
+  // ═══════════════════════════════════════════
+  // PICK A RANDOM PASSAGE
+  // ═══════════════════════════════════════════
+  function pickPassage(lvl) {
+    var list = passages[lvl];
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  // ═══════════════════════════════════════════
+  // BUILD DISPLAY
+  // ═══════════════════════════════════════════
+  function buildDisplay(text) {
+    displayEl.innerHTML = '';
+    for (var i = 0; i < text.length; i++) {
+      var sp = document.createElement('span');
+      sp.className   = 'ch';
+      sp.textContent = text[i];
+      displayEl.appendChild(sp);
+    }
+    setCursor();
+  }
+
+  function setCursor() {
+    displayEl.querySelectorAll('.ch.cursor').forEach(function(el) { el.classList.remove('cursor'); });
+    var spans = displayEl.querySelectorAll('.ch');
+    if (charIndex < spans.length) {
+      spans[charIndex].classList.add('cursor');
+      spans[charIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════
+  function init() {
+    clearInterval(timerID);
+    started      = false;
+    finished     = false;
+    charIndex    = 0;
+    errorCount   = 0;
+    totalPressed = 0;
+    timeLeft     = DURATION;
+
+    var text = pickPassage(level);
+    chars    = text.split('');
+    typed    = new Array(chars.length).fill(null);
+
+    buildDisplay(text);
+    passLbl.textContent = LABELS[level];
+
+    zoneEl.classList.add('idle');
+    resultsEl.classList.remove('show');
+    fillEl.style.width = '0%';
+
+    document.getElementById('stat-time').textContent = DURATION;
+    document.getElementById('stat-time').classList.remove('urgent');
+    document.getElementById('stat-wpm').textContent  = '0';
+    document.getElementById('stat-acc').textContent  = '100';
+    document.getElementById('stat-err').textContent  = '0';
+
+    inputEl.value = '';
+    inputEl.focus();
+  }
+
+  // ═══════════════════════════════════════════
+  // TIMER
+  // ═══════════════════════════════════════════
+  function startTimer() {
+    started = true;
+    zoneEl.classList.remove('idle');
+    timerID = setInterval(function() {
+      timeLeft--;
+      var el = document.getElementById('stat-time');
+      el.textContent = timeLeft;
+      if (timeLeft <= 10) el.classList.add('urgent');
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+      if (timeLeft <= 0) { clearInterval(timerID); endTest(); }
+    }, 1000);
+  }
+
+  // ═══════════════════════════════════════════
+  // CALC WPM  (standard: chars/5/minutes)
+  // ═══════════════════════════════════════════
+  function calcWPM() {
+    var correct = typed.filter(function(s){ return s === 'correct'; }).length;
+    var mins    = (DURATION - timeLeft) / 60;
+    if (mins === 0) return 0;
+    return Math.round((correct / 5) / mins);
+  }
+
+  function calcAcc() {
+    if (totalPressed === 0) return 100;
+    return Math.max(0, Math.round(((totalPressed - errorCount) / totalPressed) * 100));
+  }
+
+  function updateStats() {
+    document.getElementById('stat-wpm').textContent = calcWPM();
+    document.getElementById('stat-acc').textContent = calcAcc();
+    document.getElementById('stat-err').textContent = errorCount;
+    fillEl.style.width = Math.min(100, Math.round((charIndex / chars.length) * 100)) + '%';
+  }
+
+  // ═══════════════════════════════════════════
+  // END TEST
+  // ═══════════════════════════════════════════
+  function endTest() {
+    finished = true;
+    clearInterval(timerID);
+    inputEl.blur();
+
+    var wpm  = calcWPM();
+    var acc  = calcAcc();
+    var errs = errorCount;
+    var ch   = typed.filter(function(s){ return s !== null; }).length;
+
+    var msg;
+    if      (wpm >= 80) msg = 'Exceptional result. You are typing faster than the vast majority of people. Your accuracy and rhythm suggest consistent practice.';
+    else if (wpm >= 60) msg = 'Strong performance. You are comfortably above the average typing speed of 40 WPM. Accuracy work will push you further.';
+    else if (wpm >= 40) msg = 'Solid baseline. You are right at the average. Focus on reducing errors before chasing higher speed.';
+    else if (wpm >= 20) msg = 'Good start. Slow down slightly, prioritise accuracy, and speed will follow naturally with practice.';
+    else                msg = 'Every expert was once a beginner. Keep practising and you will see measurable improvement quickly.';
+
+    document.getElementById('res-wpm').textContent   = wpm;
+    document.getElementById('res-acc').textContent   = acc + '%';
+    document.getElementById('res-err').textContent   = errs;
+    document.getElementById('res-chars').textContent = ch;
+    document.getElementById('res-msg').textContent   = msg;
+
+    resultsEl.classList.add('show');
+  }
+
+  // ═══════════════════════════════════════════
+  // KEYDOWN
+  // ═══════════════════════════════════════════
+  inputEl.addEventListener('keydown', function(e) {
+    if (finished) return;
+    if (!started && e.key !== 'Tab') startTimer();
+
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      if (charIndex > 0) {
+        charIndex--;
+        typed[charIndex] = null;
+        var spans = displayEl.querySelectorAll('.ch');
+        spans[charIndex].classList.remove('correct', 'wrong');
+        setCursor();
+        updateStats();
+      }
+      return;
+    }
+
+    if (e.key.length !== 1) return;
+    if (charIndex >= chars.length) return;
+
+    totalPressed++;
+    var expected  = chars[charIndex];
+    var isCorrect = (e.key === expected);
+    typed[charIndex] = isCorrect ? 'correct' : 'wrong';
+    if (!isCorrect) errorCount++;
+
+    var spans = displayEl.querySelectorAll('.ch');
+    spans[charIndex].classList.add(isCorrect ? 'correct' : 'wrong');
+
+    charIndex++;
+    setCursor();
+    updateStats();
+
+    if (charIndex >= chars.length) endTest();
+
+    inputEl.value = '';
+    e.preventDefault();
+  });
+
+  // ═══════════════════════════════════════════
+  // CLICK / FOCUS
+  // ═══════════════════════════════════════════
+  zoneEl.addEventListener('click', function() { inputEl.focus(); });
+
+  // ═══════════════════════════════════════════
+  // DIFFICULTY
+  // ═══════════════════════════════════════════
+  document.querySelectorAll('.diff-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.diff-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      level = btn.dataset.level;
+      init();
+    });
+  });
+
+  // ═══════════════════════════════════════════
+  // RESTART
+  // ═══════════════════════════════════════════
+  document.getElementById('restart-btn').addEventListener('click', init);
+  document.getElementById('res-again').addEventListener('click', init);
+
+  function goChangeLevel() {
+    resultsEl.classList.remove('show');
+    init();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Tab') { e.preventDefault(); init(); }
+  });
+
+  // ═══════════════════════════════════════════
+  // START
+  // ═══════════════════════════════════════════
+  init();
+</script>
+
+</body>
+</html>
