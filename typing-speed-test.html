@@ -34,7 +34,6 @@
       padding: 0;
     }
 
-    /* ── Top bar ── */
     .topbar {
       width: 100%;
       border-bottom: 1px solid var(--border);
@@ -84,7 +83,6 @@
       text-transform: uppercase;
     }
 
-    /* ── Main layout ── */
     main {
       width: 100%;
       max-width: 760px;
@@ -94,7 +92,6 @@
       gap: 2rem;
     }
 
-    /* ── Section label ── */
     .sec-label {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 10px;
@@ -113,7 +110,6 @@
       background: var(--border);
     }
 
-    /* ── Stats strip ── */
     .stats-strip {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -170,7 +166,7 @@
       margin-top: 5px;
     }
 
-    /* ── Controls row ── */
+  
     .controls-row {
       display: flex;
       align-items: center;
@@ -228,7 +224,6 @@
 
     .btn-ghost:hover { border-color: var(--yellow); color: var(--yellow); }
 
-    /* ── Typing area ── */
     .typing-zone {
       border: 1px solid var(--border);
       background: var(--black2);
@@ -238,7 +233,7 @@
       min-height: 150px;
     }
 
-    /* Yellow corner accent — the signature element */
+   
     .typing-zone::before {
       content: '';
       position: absolute;
@@ -292,7 +287,7 @@
       width: 1px; height: 1px;
     }
 
-    /* ── Progress bar ── */
+    
     .progress-wrap {
       height: 2px;
       background: var(--border);
@@ -308,7 +303,7 @@
       transition: width 0.25s ease;
     }
 
-    /* ── Passage info strip ── */
+  
     .passage-info {
       display: flex;
       align-items: center;
@@ -331,7 +326,7 @@
       background: var(--yellow);
     }
 
-    /* ── Results overlay ── */
+  
     #results {
       display: none;
       position: fixed;
@@ -466,7 +461,6 @@
 
     .btn-secondary:hover { border-color: var(--yellow); color: var(--yellow); }
 
-    /* ── Footer hint ── */
     .hint {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 10px;
@@ -494,7 +488,6 @@
 </head>
 <body>
 
-<!-- Top bar -->
 <div class="topbar">
   <div class="brand">
     <div class="brand-mark">
@@ -511,7 +504,7 @@
 
 <main>
 
-  <!-- Stats -->
+
   <div>
     <p class="sec-label">Live stats</p>
     <div class="stats-strip" style="margin-top:0.75rem">
@@ -537,7 +530,6 @@
     </div>
   </div>
 
-  <!-- Controls -->
   <div class="controls-row">
     <div class="diff-group">
       <button class="diff-btn active" data-level="easy">Easy</button>
@@ -552,7 +544,6 @@
     </div>
   </div>
 
-  <!-- Passage info -->
   <div class="passage-info">
     <div class="passage-tag">
       <div class="tag-dot"></div>
@@ -561,7 +552,6 @@
     <span>60 seconds</span>
   </div>
 
-  <!-- Typing zone -->
   <div class="typing-zone idle" id="typing-zone">
     <div id="display"></div>
     <input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here"/>
@@ -571,7 +561,6 @@
 
 </main>
 
-<!-- Results panel -->
 <div id="results" role="dialog" aria-modal="true" aria-label="Test results">
   <div class="res-panel">
     <div class="res-eyebrow">Test complete</div>
@@ -603,10 +592,7 @@
 </div>
 
 <script>
-  // ═══════════════════════════════════════════
-  // PASSAGE BANK  — real-language sentences
-  // Organised by difficulty (word length + complexity)
-  // ═══════════════════════════════════════════
+ 
   const passages = {
 
     easy: [
@@ -646,13 +632,11 @@
     ]
   };
 
-  // ═══════════════════════════════════════════
-  // STATE
-  // ═══════════════════════════════════════════
+
   const DURATION   = 60;
   let level        = 'easy';
-  let chars        = [];       // array of characters in current passage
-  let typed        = [];       // null | 'correct' | 'wrong' per char
+  let chars        = [];       
+  let typed        = [];     
   let charIndex    = 0;
   let errorCount   = 0;
   let totalPressed = 0;
@@ -661,9 +645,7 @@
   let started      = false;
   let finished     = false;
 
-  // ═══════════════════════════════════════════
-  // ELEMENTS
-  // ═══════════════════════════════════════════
+
   const displayEl   = document.getElementById('display');
   const inputEl     = document.getElementById('hidden-input');
   const zoneEl      = document.getElementById('typing-zone');
@@ -673,17 +655,12 @@
 
   const LABELS = { easy: 'General knowledge', medium: 'Current affairs', hard: 'Academic writing' };
 
-  // ═══════════════════════════════════════════
-  // PICK A RANDOM PASSAGE
-  // ═══════════════════════════════════════════
   function pickPassage(lvl) {
     var list = passages[lvl];
     return list[Math.floor(Math.random() * list.length)];
   }
 
-  // ═══════════════════════════════════════════
-  // BUILD DISPLAY
-  // ═══════════════════════════════════════════
+ 
   function buildDisplay(text) {
     displayEl.innerHTML = '';
     for (var i = 0; i < text.length; i++) {
@@ -704,9 +681,6 @@
     }
   }
 
-  // ═══════════════════════════════════════════
-  // INIT
-  // ═══════════════════════════════════════════
   function init() {
     clearInterval(timerID);
     started      = false;
@@ -737,9 +711,6 @@
     inputEl.focus();
   }
 
-  // ═══════════════════════════════════════════
-  // TIMER
-  // ═══════════════════════════════════════════
   function startTimer() {
     started = true;
     zoneEl.classList.remove('idle');
@@ -755,9 +726,7 @@
     }, 1000);
   }
 
-  // ═══════════════════════════════════════════
-  // CALC WPM  (standard: chars/5/minutes)
-  // ═══════════════════════════════════════════
+
   function calcWPM() {
     var correct = typed.filter(function(s){ return s === 'correct'; }).length;
     var mins    = (DURATION - timeLeft) / 60;
@@ -777,9 +746,7 @@
     fillEl.style.width = Math.min(100, Math.round((charIndex / chars.length) * 100)) + '%';
   }
 
-  // ═══════════════════════════════════════════
-  // END TEST
-  // ═══════════════════════════════════════════
+ 
   function endTest() {
     finished = true;
     clearInterval(timerID);
@@ -806,9 +773,6 @@
     resultsEl.classList.add('show');
   }
 
-  // ═══════════════════════════════════════════
-  // KEYDOWN
-  // ═══════════════════════════════════════════
   inputEl.addEventListener('keydown', function(e) {
     if (finished) return;
     if (!started && e.key !== 'Tab') startTimer();
@@ -848,14 +812,10 @@
     e.preventDefault();
   });
 
-  // ═══════════════════════════════════════════
-  // CLICK / FOCUS
-  // ═══════════════════════════════════════════
+
   zoneEl.addEventListener('click', function() { inputEl.focus(); });
 
-  // ═══════════════════════════════════════════
-  // DIFFICULTY
-  // ═══════════════════════════════════════════
+
   document.querySelectorAll('.diff-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.diff-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -865,9 +825,6 @@
     });
   });
 
-  // ═══════════════════════════════════════════
-  // RESTART
-  // ═══════════════════════════════════════════
   document.getElementById('restart-btn').addEventListener('click', init);
   document.getElementById('res-again').addEventListener('click', init);
 
@@ -880,9 +837,6 @@
     if (e.key === 'Tab') { e.preventDefault(); init(); }
   });
 
-  // ═══════════════════════════════════════════
-  // START
-  // ═══════════════════════════════════════════
   init();
 </script>
 
